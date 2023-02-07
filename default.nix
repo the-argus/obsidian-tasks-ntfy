@@ -4,12 +4,12 @@
   ...
 }:
 nimPackages.buildNimPackage {
-  pname = "notify-tasks";
+  pname = "notify_tasks";
   version = "0.0.1";
   src = ./.;
 
   nimBinOnly = false;
-  nimbleFile = ./notify-tasks.nimble;
+  nimbleFile = ./notify_tasks.nimble;
   inherit nimRelease;
   nimFlags = ["--threads:on"];
   

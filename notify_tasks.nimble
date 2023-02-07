@@ -5,7 +5,7 @@ author        = "the-argus"
 description   = "Server that analyzes obsidian vaults for TODOs and sends notifications."
 license       = "GPL v3"
 srcDir        = "src"
-bin           = @["notify-tasks"]
+bin           = @["notify_tasks"]
 
 # Dependencies
 
