@@ -17,7 +17,7 @@ nimPackages.buildNimPackage {
     (nimPackages.fetchNimble {
       pname = "markdown";
       version = "0.8.5";
-      hash = "sha256-mrO+WeSzCBclqC2UNCY+IIv7Gs8EdTDaTeSgXy3TgNM=";
+      hash = "sha256-UUcI/7q0FgbEqygd+O6vKZQJuKO80cn9H4nDAhXU3do=";
     })
   ];
 }
