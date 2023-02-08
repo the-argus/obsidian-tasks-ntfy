@@ -27,10 +27,10 @@ proc main() =
   var parsedUrl = initUri()
   try:
     parsedUrl = parseUri(input_url)
-  except uriParseError as e:
+  except UriParseError as e:
     nt_logger.log(lvlError, e.msg)
     quit(QuitFailure)
-  if parsedUrl.scheme != "https" && parsedUrl.scheme != "http":
+  if parsedUrl.scheme != "https" and parsedUrl.scheme != "http":
     nt_logger.log(lvlError, "Url " & input_url & " is not of type http or https.")
     quit(QuitFailure)
 

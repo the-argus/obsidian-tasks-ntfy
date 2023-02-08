@@ -7,11 +7,11 @@ type
 
   Todo* = object
     due*, start*: times.Time
+    message*: string
     priority*: Priority
 
   TodoTable* = object
-    entriesByHour*: Table[int, Todo]
-    entriesByDayofWeek*: Table[int, Todo]
-    entriesByDayofMonth*: Table[int, Todo]
-    allTodos*: seq[Todo]
+    # Todos sorted by how soon their deadlines are
+    schedule*: seq[Todo]
+    todosByFilename*: Table[string, seq[Todo]]
     files*: seq[string]
