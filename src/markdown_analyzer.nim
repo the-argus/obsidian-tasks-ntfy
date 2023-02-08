@@ -4,6 +4,8 @@ import std/times
 import markdown
 import types
 import files
+import logger
+import std/logging
 
 proc collectTodos*(file: string): seq[Todo] =
   var todos: seq[Todo] = newSeq[Todo](0)
@@ -19,7 +21,7 @@ proc makeTodoTable*(root: string, modifiedDates: ref Table[string, int64]): Todo
   for file in allFiles:
     # store the last modified date for later comparison
     modifiedDates[file] = getFileInfo(file).lastWriteTime.toUnix()
-    echo("analyzing " & file & " for TODOs.")
+    nt_logger.log(lvlInfo, "analyzing " & file & " for TODOs.")
     allTodos &= collectTodos(file)
 
   return finalTable

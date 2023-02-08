@@ -5,6 +5,8 @@ import std/times
 import types
 import markdown_analyzer
 import scheduling
+import logger
+import std/logging
 
 proc main() =
   # process and validate arguments ---------------------------------------------
@@ -31,11 +33,11 @@ proc main() =
       # check if the files have changed using last modified date
       if modifiedDates.contains(file):
         if (modifiedDates[file] != getFileInfo(file).lastWriteTime.toUnix()):
-          echo("file change detected...")
+          nt_logger.log(lvlInfo, "file change detected...")
           todos = makeTodoTable(root, modifiedDates)
       else:
         # new file whose modified dates have not yet been saved, remake the db
-        echo("new file found: " & file)
+        nt_logger.log(lvlInfo, "new file found: " & file)
         todos = makeTodoTable(root, modifiedDates)
 
     # refresh rate
