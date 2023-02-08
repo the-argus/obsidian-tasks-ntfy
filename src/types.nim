@@ -13,4 +13,5 @@ type
     entriesByHour*: Table[int, Todo]
     entriesByDayofWeek*: Table[int, Todo]
     entriesByDayofMonth*: Table[int, Todo]
+    allTodos*: seq[Todo]
     files*: seq[string]

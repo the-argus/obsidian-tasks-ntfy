@@ -1,4 +1,9 @@
+import std/osproc
 import types
 
-proc sendNotificationsIfNeeded*(todos: TodoTable): bool =
-  return false
+proc notify(message: string, ntfyUrl: string) =
+  execProcess("curl", args=["-d", message, ntfyUrl])
+
+proc sendNotificationsIfNeeded*(todos: TodoTable, ntfyUrl: string) =
+  for todo in todos.allTodos:
+

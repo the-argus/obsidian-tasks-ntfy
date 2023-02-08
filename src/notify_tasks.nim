@@ -2,6 +2,7 @@ import std/os
 import std/strutils
 import std/tables
 import std/times
+import std/uri
 import types
 import markdown_analyzer
 import scheduling
@@ -10,11 +11,11 @@ import std/logging
 
 proc main() =
   # process and validate arguments ---------------------------------------------
-  if paramCount() < 1:
-    echo("notify-tasks requires one positional argument: the root directory of your markdown vault.")
+  if paramCount() < 2:
+    echo("notify-tasks requires two positional arguments: the root directory of your markdown vault, and the ntfy url.")
     quit(QuitFailure)
-  elif paramCount() > 1:
-    echo("Warning: notify-tasks only accepts one argument. Ignoring everything after " & paramStr(1))
+  elif paramCount() > 2:
+    echo("Warning: notify-tasks only accepts two arguments. Ignoring everything after " & paramStr(2))
   
   # first argument is the root directory
   let root = paramStr(1)
@@ -22,23 +23,36 @@ proc main() =
     echo(root & " is not a valid directory.")
     quit(QuitFailure)
 
+  let input_url = paramStr(2)
+  var parsedUrl = initUri()
+  try:
+    parsedUrl = parseUri(input_url)
+  except uriParseError as e:
+    nt_logger.log(lvlError, e.msg)
+    quit(QuitFailure)
+  if parsedUrl.scheme != "https" && parsedUrl.scheme != "http":
+    nt_logger.log(lvlError, "Url " & input_url & " is not of type http or https.")
+    quit(QuitFailure)
+
+  let url = $parsedUrl
+
   # main functionality ---------------------------------------------------------
   var modifiedDates: ref Table[string, int64] = new(Table[string, int64])
-  var todos: TodoTable = makeTodoTable(root, modifiedDates)
+  var todos: TodoTable = TodoTable()
 
   while true:
-    discard sendNotificationsIfNeeded(todos)
+    sendNotificationsIfNeeded(todos, url)
 
     for file in todos.files:
       # check if the files have changed using last modified date
       if modifiedDates.contains(file):
         if (modifiedDates[file] != getFileInfo(file).lastWriteTime.toUnix()):
           nt_logger.log(lvlInfo, "file change detected...")
-          todos = makeTodoTable(root, modifiedDates)
+          todos = makeTodoTable(root, modifiedDates, todos)
       else:
         # new file whose modified dates have not yet been saved, remake the db
         nt_logger.log(lvlInfo, "new file found: " & file)
-        todos = makeTodoTable(root, modifiedDates)
+        todos = makeTodoTable(root, modifiedDates, todos)
 
     # refresh rate
     os.sleep(500)
