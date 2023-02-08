@@ -1,6 +1,8 @@
 import std/os
 import std/strutils
 import std/tables
+import std/times
+import std/re
 import markdown
 
 type
@@ -8,7 +10,7 @@ type
     High, Medium, Low
 
   Todo* = object
-    due*, start*: string
+    due*, start*: times.Time
     priority*: Priority
 
   TodoTable* = object
@@ -17,16 +19,33 @@ type
     entriesByDayofMonth: Table[int, Todo]
     files: seq[string]
 
-proc makeTodoTable(root: string): TodoTable =
+proc retrieveAllMarkdownFiles(root: string): seq[string] =
+  var files: seq[string] = newSeq[string](0)
+
+  for file in walkDirRec(root, relative=true):
+    if file.lastPathPart().endsWith(".md"):
+      files.add(file)
+
+  return files
+
+proc collectTodos(file: string): seq[Todo] =
+  var todos: seq[Todo] = newSeq[Todo](0)
+  return todos
+
+proc makeTodoTable(root: string, modifiedDates: ref Table[string, int64]): TodoTable =
   let allFiles: seq[string] = retrieveAllMarkdownFiles(root)
-  var allTodos: seq[Todo] = @[]
+  var allTodos: seq[Todo] = newSeq[Todo](0)
   var finalTable: TodoTable = TodoTable()
   finalTable.files = allFiles
 
   # collect all todos by concatenating to the sequence.
   for file in allFiles:
+    # store the last modified date for later comparison
+    modifiedDates[file] = getFileInfo(file).lastWriteTime.toUnix()
     allTodos &= collectTodos(file)
 
+proc sendNotificationsIfNeeded(todos: TodoTable): bool =
+  return false
 
 proc main() =
   # process and validate arguments ---------------------------------------------
@@ -38,19 +57,25 @@ proc main() =
   
   # first argument is the root directory
   let root = paramStr(1)
-  if !dirExists(root):
+  if dirExists(root) != true:
     echo(root & " is not a valid directory.")
     quit(QuitFailure)
 
   # main functionality ---------------------------------------------------------
-  TodoTable todos = makeTodoTable(root)
-  Table modifiedDates = {}.newTable()
+  var modifiedDates: ref Table[string, int64] = new(Table[string, int64])
+  var todos: TodoTable = makeTodoTable(root, modifiedDates)
 
   while true:
-    sendNotificationsIfNeeded(todos)
+    discard sendNotificationsIfNeeded(todos)
 
     for file in todos.files:
-      if ()
+      # check if the files have changed using last modified date
+      if modifiedDates.contains(file):
+        if (modifiedDates[file] != getFileInfo(file).lastWriteTime.toUnix()):
+          todos = makeTodoTable(root, modifiedDates)
+      else:
+        # new file whose modified dates have not yet been saved, remake the db
+        todos = makeTodoTable(root, modifiedDates)
 
     # refresh rate
     os.sleep(500)
