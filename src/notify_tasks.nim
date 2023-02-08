@@ -42,7 +42,10 @@ proc makeTodoTable(root: string, modifiedDates: ref Table[string, int64]): TodoT
   for file in allFiles:
     # store the last modified date for later comparison
     modifiedDates[file] = getFileInfo(file).lastWriteTime.toUnix()
+    echo("analyzing " & file & " for TODOs.")
     allTodos &= collectTodos(file)
+
+  return finalTable
 
 proc sendNotificationsIfNeeded(todos: TodoTable): bool =
   return false
@@ -72,9 +75,11 @@ proc main() =
       # check if the files have changed using last modified date
       if modifiedDates.contains(file):
         if (modifiedDates[file] != getFileInfo(file).lastWriteTime.toUnix()):
+          echo("file change detected...")
           todos = makeTodoTable(root, modifiedDates)
       else:
         # new file whose modified dates have not yet been saved, remake the db
+        echo("new file found: " & file)
         todos = makeTodoTable(root, modifiedDates)
 
     # refresh rate
