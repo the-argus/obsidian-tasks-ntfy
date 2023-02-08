@@ -39,6 +39,7 @@ proc main() =
   # main functionality ---------------------------------------------------------
   var modifiedDates: ref Table[string, int64] = new(Table[string, int64])
   var todos: TodoTable = TodoTable()
+  todos = makeTodoTable(root, modifiedDates, todos)
 
   while true:
     sendNotificationsIfNeeded(todos, url)

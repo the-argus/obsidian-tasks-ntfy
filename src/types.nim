@@ -15,3 +15,6 @@ type
     schedule*: seq[Todo]
     todosByFilename*: Table[string, seq[Todo]]
     files*: seq[string]
+
+proc nextTodo(todoTable: TodoTable): Todo =
+  return todoTable.schedule[0]
