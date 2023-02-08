@@ -2,53 +2,9 @@ import std/os
 import std/strutils
 import std/tables
 import std/times
-import std/re
-import markdown
-
-type
-  Priority* {.pure.} = enum
-    High, Medium, Low
-
-  Todo* = object
-    due*, start*: times.Time
-    priority*: Priority
-
-  TodoTable* = object
-    entriesByHour: Table[int, Todo]
-    entriesByDayofWeek: Table[int, Todo]
-    entriesByDayofMonth: Table[int, Todo]
-    files: seq[string]
-
-proc retrieveAllMarkdownFiles(root: string): seq[string] =
-  var files: seq[string] = newSeq[string](0)
-
-  for file in walkDirRec(root, relative=false):
-    if file.lastPathPart().endsWith(".md"):
-      files.add(file)
-
-  return files
-
-proc collectTodos(file: string): seq[Todo] =
-  var todos: seq[Todo] = newSeq[Todo](0)
-  return todos
-
-proc makeTodoTable(root: string, modifiedDates: ref Table[string, int64]): TodoTable =
-  let allFiles: seq[string] = retrieveAllMarkdownFiles(root)
-  var allTodos: seq[Todo] = newSeq[Todo](0)
-  var finalTable: TodoTable = TodoTable()
-  finalTable.files = allFiles
-
-  # collect all todos by concatenating to the sequence.
-  for file in allFiles:
-    # store the last modified date for later comparison
-    modifiedDates[file] = getFileInfo(file).lastWriteTime.toUnix()
-    echo("analyzing " & file & " for TODOs.")
-    allTodos &= collectTodos(file)
-
-  return finalTable
-
-proc sendNotificationsIfNeeded(todos: TodoTable): bool =
-  return false
+import types
+import markdown_analyzer
+import scheduling
 
 proc main() =
   # process and validate arguments ---------------------------------------------
