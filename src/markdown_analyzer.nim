@@ -1,4 +1,5 @@
 import std/os
+import std/re
 import std/tables
 import std/lists
 import std/algorithm
@@ -12,9 +13,14 @@ import std/logging
 
 proc isTodo(token: markdown.Token): bool =
   if token of markdown.Li:
-    nt_logger.log(lvlInfo, "TODO found in token with contents \"" & token.doc & "\"")
-    return true
+    let pattern = re"\[[ x]\]\s*?TODO\s*?(.*?)$"
+    var matches: seq[string] = @[]
+    if token.doc.contains(pattern, matches):
+      for match in matches:
+        nt_logger.log(lvlInfo, match)
+      return true
   return false
+
 
 proc isUl(token: markdown.Token): bool =
   return token of markdown.Ul
@@ -55,6 +61,9 @@ proc collectTodos(file: string): seq[Todo] =
   # search for TODOs inside those
   for ul in allUls[]:
     recursiveMarkdownSearch(ul, isTodo, allTodos)
+
+  for todo in allTodos[]:
+    nt_logger.log(lvlInfo, todo.doc)
 
   return todos
 
