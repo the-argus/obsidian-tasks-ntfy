@@ -19,16 +19,15 @@ proc isTodo(token: markdown.Token): bool =
 proc isUl(token: markdown.Token): bool =
   return token of markdown.Ul
 
-proc recursiveMarkdownSearch(token: markdown.Token, eval: (Token) -> bool, allTokens: var seq[Token]): seq[Token] =
+proc recursiveMarkdownSearch(token: markdown.Token, eval: (Token) -> bool, allTokens: ref seq[Token]) =
   for child in token.children.items():
     # skip small children that can't even contain "- [ ] TODO"
     if child.doc.len() < 9:
       continue
     if child.eval():
-      allTokens.add(child)
+      allTokens[].add(child)
     else:
-      allTokens &= recursiveMarkdownSearch(child, eval, allTokens)
-  return allTokens
+      recursiveMarkdownSearch(child, eval, allTokens)
 
 # get all the todos in a markdown file
 proc collectTodos(file: string): seq[Todo] =
@@ -47,15 +46,15 @@ proc collectTodos(file: string): seq[Todo] =
   # parse it
   state.parse(root)
 
-  var allTodos = newSeq[Token](0)
-  var allUls = newSeq[Token](0)
+  let allTodos: ref seq[Token] = new(seq[Token])
+  let allUls: ref seq[Token] = new(seq[Token])
 
   # search for unordered lists
-  allUls = recursiveMarkdownSearch(root, isUl, allUls)
+  recursiveMarkdownSearch(root, isUl, allUls)
 
   # search for TODOs inside those
-  for ul in allUls:
-    allTodos &= recursiveMarkdownSearch(ul, isTodo, allTodos)
+  for ul in allUls[]:
+    recursiveMarkdownSearch(ul, isTodo, allTodos)
 
   return todos
 

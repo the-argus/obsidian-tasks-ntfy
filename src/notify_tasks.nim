@@ -1,5 +1,6 @@
 import std/os
 import std/strutils
+import std/sequtils
 import std/tables
 import std/times
 import std/uri
