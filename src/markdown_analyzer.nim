@@ -3,6 +3,7 @@ import std/tables
 import std/lists
 import std/algorithm
 import std/times
+import sugar
 import markdown
 import types
 import files
@@ -10,18 +11,24 @@ import logger
 import std/logging
 
 proc isTodo(token: markdown.Token): bool =
-  if token of Ul:
+  if token of markdown.Li:
     nt_logger.log(lvlInfo, "TODO found in token with contents \"" & token.doc & "\"")
     return true
   return false
 
-proc recursiveTodoSearch(token: markdown.Token, allTodos: var seq[Token]): seq[Token] =
+proc isUl(token: markdown.Token): bool =
+  return token of markdown.Ul
+
+proc recursiveMarkdownSearch(token: markdown.Token, eval: (Token) -> bool, allTokens: var seq[Token]): seq[Token] =
   for child in token.children.items():
-    if child.isTodo():
-      allTodos.add(child)
+    # skip small children that can't even contain "- [ ] TODO"
+    if child.doc.len() < 9:
+      continue
+    if child.eval():
+      allTokens.add(child)
     else:
-      allTodos &= recursiveTodoSearch(child, allTodos)
-  return allTodos
+      allTokens &= recursiveMarkdownSearch(child, eval, allTokens)
+  return allTokens
 
 # get all the todos in a markdown file
 proc collectTodos(file: string): seq[Todo] =
@@ -36,11 +43,19 @@ proc collectTodos(file: string): seq[Todo] =
 
   # bring the file's text into markdown parser
   root.doc = fileObject.readAll()
+
   # parse it
   state.parse(root)
 
   var allTodos = newSeq[Token](0)
-  allTodos = recursiveTodoSearch(root, allTodos)
+  var allUls = newSeq[Token](0)
+
+  # search for unordered lists
+  allUls = recursiveMarkdownSearch(root, isUl, allUls)
+
+  # search for TODOs inside those
+  for ul in allUls:
+    allTodos &= recursiveMarkdownSearch(ul, isTodo, allTodos)
 
   return todos
 
