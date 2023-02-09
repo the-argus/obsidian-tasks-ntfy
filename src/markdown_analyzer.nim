@@ -1,11 +1,11 @@
 import std/os
-import std/re
 import std/tables
 import std/lists
 import std/algorithm
 import std/times
 import sugar
 import markdown
+import regex
 import types
 import files
 import logger
@@ -14,13 +14,8 @@ import std/logging
 proc isTodo(token: markdown.Token): bool =
   if token of markdown.Li:
     let pattern = re"\[[ x]\]\s*?TODO\s*?(.*?)$"
-    var matches: seq[string] = @[]
-    if token.doc.contains(pattern, matches):
-      for match in matches:
-        nt_logger.log(lvlInfo, match)
-      return true
+    return pattern in token.doc
   return false
-
 
 proc isUl(token: markdown.Token): bool =
   return token of markdown.Ul
