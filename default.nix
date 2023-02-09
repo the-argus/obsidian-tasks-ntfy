@@ -19,6 +19,10 @@ nimPackages.buildNimPackage {
       version = "0.8.5";
       hash = "sha256-UUcI/7q0FgbEqygd+O6vKZQJuKO80cn9H4nDAhXU3do=";
     })
-    regex
+    (nimPackages.fetchNimble {
+      pname = "regex";
+      version = "0.20.1";
+      hash = "sha256-Rt2unozGbdp3pVepFCKnQ00dVfVSVSfJDeMOzxYdE7A=";
+    })
   ];
 }
