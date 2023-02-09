@@ -1,5 +1,6 @@
 import std/os
 import std/tables
+import std/lists
 import std/algorithm
 import std/times
 import markdown
@@ -8,9 +9,39 @@ import files
 import logger
 import std/logging
 
+proc isTodo(token: markdown.Token): bool =
+  if token of Ul:
+    nt_logger.log(lvlInfo, "TODO found in token with contents \"" & token.doc & "\"")
+    return true
+  return false
+
+proc recursiveTodoSearch(token: markdown.Token, allTodos: var seq[Token]): seq[Token] =
+  for child in token.children.items():
+    if child.isTodo():
+      allTodos.add(child)
+    else:
+      allTodos &= recursiveTodoSearch(child, allTodos)
+  return allTodos
+
 # get all the todos in a markdown file
 proc collectTodos(file: string): seq[Todo] =
   var todos: seq[Todo] = newSeq[Todo](0)
+
+  let root = markdown.Document()
+  let config = initCommonmarkConfig()
+  let state = markdown.State(config: config)
+
+  let fileObject = open(file)
+  defer: fileObject.close()
+
+  # bring the file's text into markdown parser
+  root.doc = fileObject.readAll()
+  # parse it
+  state.parse(root)
+
+  var allTodos = newSeq[Token](0)
+  allTodos = recursiveTodoSearch(root, allTodos)
+
   return todos
 
 # compares two todos and returns the sooner one
