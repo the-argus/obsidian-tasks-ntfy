@@ -56,31 +56,44 @@ proc toTodo(token: markdown.Token): Todo =
   # make times
   var doneDateMatch: RegexMatch = RegexMatch()
   let hasDoneDate = regex.find(matchTarget, doneDateRegex, doneDateMatch)
-  var doneDate = times.DateTime()
+  var doneDate: times.DateTime = nil
   if hasDoneDate:
     matchTarget = matchTarget.replace($doneDateMatch.group(0), "")
     doneDate = doneDateMatch.toDateTime()
   
   var dueDateMatch: RegexMatch = RegexMatch()
   let hasDueDate = regex.find(matchTarget, dueDateRegex, dueDateMatch)
-  var dueDate = times.DateTime()
+  var dueDate: times.DateTime = nil
   if hasDueDate:
     matchTarget = matchTarget.replace($dueDateMatch.group(0), "")
     dueDate = dueDateMatch.toDateTime()
   
   var scheduledDateMatch: RegexMatch = RegexMatch()
   let hasScheduledDate = regex.find(matchTarget, scheduledDateRegex, scheduledDateMatch)
-  var scheduledDate = times.DateTime()
+  var scheduledDate: times.DateTime = nil
   if hasScheduledDate:
     matchTarget = matchTarget.replace($scheduledDateMatch.group(0), "")
     scheduledDate = scheduledDateMatch.toDateTime()
   
   var startDateMatch: RegexMatch = RegexMatch()
   let hasStartDate = regex.find(matchTarget, startDateRegex, startDateMatch)
-  var startDate = times.DateTime()
+  var startDate: times.DateTime = nil
   if hasStartDate:
     matchTarget = matchTarget.replace($startDateMatch.group(0), "")
     startDate = startDateMatch.toDateTime()
+
+  let todo = initTodo(
+    priority,
+    status,
+    description = "",
+    nil, # recurrence not working atm
+    startDate,
+    dueDate,
+    doneDate,
+    scheduledDate
+  )
+
+  return todo
 
 
 proc isTodo(token: markdown.Token): bool =

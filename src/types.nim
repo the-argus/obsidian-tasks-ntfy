@@ -1,6 +1,6 @@
-import std/times
-import std/tables
-import regex
+from std/times import DateTime
+from std/tables import Table
+from strformat import fmt
 
 type
   Status* {.pure.} = enum
@@ -12,22 +12,22 @@ type
   Recurrence* {.pure.} = object
     # rrule: RRule
     baseOnToday: bool
-    referenceDate: times.DateTime
-    startDate: times.DateTime
-    scheduledDate: times.DateTime
-    dueDate: times.DateTime
+    referenceDate: DateTime
+    startDate: DateTime
+    scheduledDate: DateTime
+    dueDate: DateTime
 
   Todo* = object
     priority*: Priority
     status*: Status
     description*: string
-    startDate: times.DateTime
+    startDate: DateTime
     hasStartDate: bool
-    scheduledDate: times.DateTime
+    scheduledDate: DateTime
     hasScheduledDate: bool
-    dueDate: times.DateTime
+    dueDate: DateTime
     hasDueDate: bool
-    doneDate: times.DateTime
+    doneDate: DateTime
     hasDoneDate: bool
     recurrence: Recurrence
     hasRecurrence: bool
@@ -46,32 +46,32 @@ type
 proc nextTodo*(todoTable: TodoTable): Todo =
   return todoTable.schedule[0]
 
-proc startDate*(todo: Todo): times.DateTime =
+proc startDate*(todo: Todo): DateTime =
   if not todo.hasStartDate:
-    raise TodoAccessError
+    raise newException(TodoAccessError, fmt"Todo does not have a start date.")
   todo.startDate
 
-proc scheduledDate*(todo: Todo): times.DateTime =
+proc scheduledDate*(todo: Todo): DateTime =
   if not todo.hasScheduledDate:
-    raise TodoAccessError
+    raise newException(TodoAccessError, fmt"Todo does not have a scheduled date.")
   todo.scheduledDate
 
-proc dueDate*(todo: Todo): times.DateTime =
+proc dueDate*(todo: Todo): DateTime =
   if not todo.hasDueDate:
-    raise TodoAccessError
+    raise newException(TodoAccessError, fmt"Todo does not have a due date.")
   todo.dueDate
 
-proc doneDate*(todo: Todo): times.DateTime =
+proc doneDate*(todo: Todo): DateTime =
   if not todo.hasDoneDate:
-    raise TodoAccessError
+    raise newException(TodoAccessError, fmt"Todo does not have a done date.")
   todo.doneDate
 
 proc initTodo(priority: Priority, status: Status, description: string,
               recurrence: Recurrence = nil,
-              startDate: times.DateTime = nil,
-              dueDate: times.DateTime = nil,
-              doneDate: times.DateTime = nil,
-              scheduledDate: times.DateTime = nil
+              startDate: DateTime = nil,
+              dueDate: DateTime = nil,
+              doneDate: DateTime = nil,
+              scheduledDate: DateTime = nil
               ): Todo =
   let todo = Todo(
     priority = priority,
@@ -81,9 +81,9 @@ proc initTodo(priority: Priority, status: Status, description: string,
     recurrence = recurrence,
     hasStartDate = (startDate != nil),
     startDate = startDate,
-    hasDueDate = (dueDate != nil)
+    hasDueDate = (dueDate != nil),
     dueDate = dueDate,
-    hasScheduledDate = (scheduledDate != nil)
+    hasScheduledDate = (scheduledDate != nil),
     scheduledDate = scheduledDate,
     hasDoneDate = (doneDate != nil),
     doneDate = doneDate,
