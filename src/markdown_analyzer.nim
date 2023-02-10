@@ -13,16 +13,26 @@ import logger
 import std/logging
 import symbols
 
+let defaultReminderHour = 9
+
 proc toDateTime(rm: RegexMatch): times.DateTime =
   # all the regexes use group(1) as the regex match
-  let date = rm.group(1)
+  let date = $rm.group(1)
   var dateMatch: RegexMatch = RegexMatch()
   discard regex.find(date, dateRegex, dateMatch)
-  let year = dateMatch.group(1).parseInt()
-  let month = dateMatch.group(2).parseInt()
-  let day: MonthdayRange = @[dateMatch.group(3).parseInt()]
+  let year = ($dateMatch.group(1)).parseInt()
+  let month = ($dateMatch.group(2)).parseInt()
+  let day: MonthdayRange = ($dateMatch.group(3)).parseInt()
 
-  return dateTime(year: year, month: times.Month(month), monthday: day, hour=9, zone: times.local())
+  let newDateTime: times.DateTime = dateTime(
+    year=year,
+    month=times.Month(month),
+    monthday=day,
+    hour=defaultReminderHour,
+    zone=times.local()
+  )
+
+  return newDateTime
 
 proc toTodo(token: markdown.Token): Todo =
   var matchTarget = token.doc
@@ -30,50 +40,50 @@ proc toTodo(token: markdown.Token): Todo =
   # get the priority and remove it
   var priorityMatch: RegexMatch = RegexMatch()
   let hasPriority: bool = regex.find(matchTarget, priorityRegex, priorityMatch)
-  let priority: Priority = prioritySymbols[priorityMatch.group(0)]
+  let priority: Priority = prioritySymbols[$priorityMatch.group(0)]
 
-  matchTarget.replace(priorityMatch.group(0), '')
+  matchTarget = matchTarget.replace($priorityMatch.group(0), "")
 
   # get the status and remove it
   var statusMatch: RegexMatch = RegexMatch()
   discard regex.find(matchTarget, statusRegex, statusMatch)
-  let status: Status = statusSymbols[statusMatch.group(1)]
+  let status: Status = statusSymbols[$statusMatch.group(1)]
 
-  matchTarget.replace(statusMatch.group(0), '')
+  matchTarget = matchTarget.replace($statusMatch.group(0), "")
 
   # make times
   var doneDateMatch: RegexMatch = RegexMatch()
   let hasDoneDate = regex.find(matchTarget, doneDateRegex, doneDateMatch)
-  let doneDate:times.DateTime
+  var doneDate = times.DateTime()
   if hasDoneDate:
-    matchTarget.replace(doneDateMatch.group(0), '')
+    matchTarget = matchTarget.replace($doneDateMatch.group(0), "")
     doneDate = doneDateMatch.toDateTime()
   
   var dueDateMatch: RegexMatch = RegexMatch()
   let hasDueDate = regex.find(matchTarget, dueDateRegex, dueDateMatch)
-  let dueDate:times.DateTime
+  var dueDate = times.DateTime()
   if hasDueDate:
-    matchTarget.replace(dueDateMatch.group(0), '')
+    matchTarget = matchTarget.replace($dueDateMatch.group(0), "")
     dueDate = dueDateMatch.toDateTime()
   
   var scheduledDateMatch: RegexMatch = RegexMatch()
   let hasScheduledDate = regex.find(matchTarget, scheduledDateRegex, scheduledDateMatch)
-  let scheduledDate:times.DateTime
+  var scheduledDate = times.DateTime()
   if hasScheduledDate:
-    matchTarget.replace(scheduledDateMatch.group(0), '')
+    matchTarget = matchTarget.replace($scheduledDateMatch.group(0), "")
     scheduledDate = scheduledDateMatch.toDateTime()
   
   var startDateMatch: RegexMatch = RegexMatch()
   let hasStartDate = regex.find(matchTarget, startDateRegex, startDateMatch)
-  let startDate:times.DateTime
+  var startDate = times.DateTime()
   if hasStartDate:
-    matchTarget.replace(startDateMatch.group(0), '')
+    matchTarget = matchTarget.replace($startDateMatch.group(0), "")
     startDate = startDateMatch.toDateTime()
 
 
 proc isTodo(token: markdown.Token): bool =
   if token of markdown.Li:
-    let pattern = (?u:re"\[[ x]\]\s*?TODO\s*?(.*?)$")
+    let pattern = re"(?u)\[[ x]\]\s*?TODO\s*?(.*?)$"
     return pattern in token.doc
   return false
 
@@ -84,8 +94,8 @@ proc isUl(token: markdown.Token): bool =
 
 proc recursiveMarkdownSearch(token: markdown.Token, eval: (Token) -> bool, allTokens: ref seq[Token]) =
   for child in token.children.items():
-    # skip small children that can't even contain "- [ ] TODO"
-    if child.doc.len() < 9:
+    # skip small children that can"t even contain "- [ ] TODO"
+    if child of markdown.Inline:
       continue
     if child.eval():
       allTokens[].add(child)
@@ -104,7 +114,7 @@ proc collectTodos(file: string): seq[Todo] =
   let fileObject = open(file)
   defer: fileObject.close()
 
-  # bring the file's text into markdown parser
+  # bring the file"s text into markdown parser
   root.doc = fileObject.readAll()
 
   # parse it
