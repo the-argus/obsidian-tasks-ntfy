@@ -40,7 +40,9 @@ proc toTodo(token: markdown.Token): Todo =
   # get the priority and remove it
   var priorityMatch: RegexMatch = RegexMatch()
   let hasPriority: bool = regex.find(matchTarget, priorityRegex, priorityMatch)
-  let priority: Priority = prioritySymbols[$priorityMatch.group(0)]
+  var priority = Priority.None
+  if hasPriority:
+    priority = prioritySymbols[$priorityMatch.group(0)]
 
   matchTarget = matchTarget.replace($priorityMatch.group(0), "")
 
