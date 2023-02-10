@@ -12,21 +12,21 @@ type
   Recurrence* {.pure.} = object
     # rrule: RRule
     baseOnToday: bool
-    referenceDate: times.Time
-    startDate: times.Time
-    scheduledDate: times.Time
-    dueDate: times.Time
+    referenceDate: times.DateTime
+    startDate: times.DateTime
+    scheduledDate: times.DateTime
+    dueDate: times.DateTime
 
   Todo* = object
     priority*: Priority
     status*: Status
     description*: string
-    startDate*: times.Time
-    scheduledDate*: times.Time
-    dueDate*: times.Time
-    doneDate*: times.Time
+    startDate*: times.DateTime
+    scheduledDate*: times.DateTime
+    dueDate*: times.DateTime
+    doneDate*: times.DateTime
     recurrence*: Recurrence
-    tags*: seq[string]
+    # tags*: seq[string]
     # originalMarkdown: string
     # scheduledDateIsInferred: bool
 
