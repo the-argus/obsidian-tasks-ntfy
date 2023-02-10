@@ -64,7 +64,7 @@ proc collectTodos(file: string): seq[Todo] =
 
 # compares two todos and returns the sooner one
 proc timeSorter(x, y: Todo): int =
-  if x.due < y.due:
+  if x.scheduledDate < y.scheduledDate:
     # x is sooner than y!
     return -1
   else:

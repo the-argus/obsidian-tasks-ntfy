@@ -2,25 +2,14 @@ import std/times
 import std/tables
 import regex
 
-# taken from https://github.com/obsidian-tasks-group/obsidian-tasks/blob/main/src/Task.ts
-let recurrenceSymbol* = '🔁'
-let startDateSymbol* = '🛫'
-let scheduledDateSymbol* = '⏳'
-let dueDateSymbol* = '📅'
-let doneDateSymbol* = '✅'
-let priorityRegex* = re'([⏫🔼🔽])$/u'
-let startDateRegex* = re'🛫 *(\d{4}-\d{2}-\d{2})$/u'
-let scheduledDateRegex* = re'[⏳⌛] *(\d{4}-\d{2}-\d{2})$/u'
-let dueDateRegex* = re'[📅📆🗓] *(\d{4}-\d{2}-\d{2})$/u'
-let doneDateRegex* = re'✅ *(\d{4}-\d{2}-\d{2})$/u'
-let recurrenceRegex* = re'🔁 ?([a-zA-Z0-9, !]+)$/iu'
-let hashTags* = re'(^|\s)#[^ !@#$%^&*(),.?":{}|<>]*'
-
 type
+  Status* {.pure.} = enum
+    Done, InProgress, Cancelled, Empty, Todo
+
   Priority* {.pure.} = enum
     High, Medium, None, Low
 
-  Recurrence* {.pure.} = enum
+  Recurrence* {.pure.} = object
     # rrule: RRule
     baseOnToday: bool
     referenceDate: times.Time
@@ -32,7 +21,6 @@ type
     priority*: Priority
     status*: Status
     description*: string
-    priority*: Priority
     startDate*: times.Time
     scheduledDate*: times.Time
     dueDate*: times.Time
@@ -48,11 +36,5 @@ type
     todosByFilename*: Table[string, seq[Todo]]
     files*: seq[string]
 
-proc nextTodo(todoTable: TodoTable): Todo =
+proc nextTodo*(todoTable: TodoTable): Todo =
   return todoTable.schedule[0]
-
-let prioritySymbols* = initTable([Priority, string])
-prioritySymbols[Priority.High] = '⏫'
-prioritySymbols[Priority.Medium] = '🔼'
-prioritySymbols[Priority.Low] = '🔽'
-prioritySymbols[Priority.None] = ''
