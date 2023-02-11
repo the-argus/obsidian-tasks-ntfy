@@ -2,8 +2,10 @@ import std/os
 import std/tables
 import std/lists
 import std/algorithm
-import std/times
+from std/times import dateTime, DateTime, toUnix, MonthdayRange, Month, local
+import std/times # for DateTime < operator
 import std/strutils
+import std/options
 import sugar
 import markdown
 import regex
@@ -26,10 +28,10 @@ proc toDateTime(rm: RegexMatch): times.DateTime =
 
   let newDateTime: times.DateTime = dateTime(
     year=year,
-    month=times.Month(month),
+    month=Month(month),
     monthday=day,
     hour=defaultReminderHour,
-    zone=times.local()
+    zone=local()
   )
 
   return newDateTime
@@ -56,41 +58,41 @@ proc toTodo(token: markdown.Token): Todo =
   # make times
   var doneDateMatch: RegexMatch = RegexMatch()
   let hasDoneDate = regex.find(matchTarget, doneDateRegex, doneDateMatch)
-  var doneDate: times.DateTime = nil
+  var doneDate: Option[DateTime] = none(DateTime)
   if hasDoneDate:
     matchTarget = matchTarget.replace($doneDateMatch.group(0), "")
-    doneDate = doneDateMatch.toDateTime()
+    doneDate = some(doneDateMatch.toDateTime())
   
   var dueDateMatch: RegexMatch = RegexMatch()
   let hasDueDate = regex.find(matchTarget, dueDateRegex, dueDateMatch)
-  var dueDate: times.DateTime = nil
+  var dueDate: Option[DateTime] = none(DateTime)
   if hasDueDate:
     matchTarget = matchTarget.replace($dueDateMatch.group(0), "")
-    dueDate = dueDateMatch.toDateTime()
+    dueDate = some(dueDateMatch.toDateTime())
   
   var scheduledDateMatch: RegexMatch = RegexMatch()
   let hasScheduledDate = regex.find(matchTarget, scheduledDateRegex, scheduledDateMatch)
-  var scheduledDate: times.DateTime = nil
+  var scheduledDate: Option[DateTime] = none(DateTime)
   if hasScheduledDate:
     matchTarget = matchTarget.replace($scheduledDateMatch.group(0), "")
-    scheduledDate = scheduledDateMatch.toDateTime()
+    scheduledDate = some(scheduledDateMatch.toDateTime())
   
   var startDateMatch: RegexMatch = RegexMatch()
   let hasStartDate = regex.find(matchTarget, startDateRegex, startDateMatch)
-  var startDate: times.DateTime = nil
+  var startDate: Option[DateTime] = none(DateTime)
   if hasStartDate:
     matchTarget = matchTarget.replace($startDateMatch.group(0), "")
-    startDate = startDateMatch.toDateTime()
+    startDate = some(startDateMatch.toDateTime())
 
-  let todo = initTodo(
-    priority,
-    status,
-    description = "",
-    nil, # recurrence not working atm
-    startDate,
-    dueDate,
-    doneDate,
-    scheduledDate
+  let todo = Todo(
+    priority: priority,
+    status: status,
+    description: "",
+    recurrence: none(Recurrence),
+    startDate: startDate,
+    dueDate: dueDate,
+    doneDate: doneDate,
+    scheduledDate: scheduledDate
   )
 
   return todo
@@ -153,7 +155,18 @@ proc collectTodos(file: string): seq[Todo] =
 
 # compares two todos and returns the sooner one
 proc timeSorter(x, y: Todo): int =
-  if x.scheduledDate < y.scheduledDate:
+  if (not x.scheduledDate.isSome) and (not y.scheduledDate.isSome):
+    # no dates provided!
+    return 0
+  if not y.scheduledDate.isSome:
+    # x has a date which means it's more urgent
+    return -1
+  if not x.scheduledDate.isSome:
+    # y has a date which means it's more urgent
+    return 1
+
+  # actual comparison
+  if x.scheduledDate.get() < y.scheduledDate.get():
     # x is sooner than y!
     return -1
   else:
