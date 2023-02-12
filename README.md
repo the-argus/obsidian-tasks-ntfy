@@ -21,6 +21,11 @@ notify-tasks [notes] [ntfy url]
         Example: https://ntfy.sh/mytopic
 ```
 
+## how to subscribe
+
+Once you have set up notify-tasks, you will want to subscribe to the ntfy topic
+on your devices, so you actually recieve the notifications. See [Subscribe to a topic](https://ntfy.sh/#subscribe).
+
 ## tasks spec
 
 waiting on [this issue I made](https://github.com/obsidian-tasks-group/obsidian-tasks/issues/1656)
