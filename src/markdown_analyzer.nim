@@ -101,6 +101,14 @@ proc toTodo(token: markdown.Token): Todo =
   if hasStartDate:
     startDate = some(startDateMatch.toDateTime(matchTarget))
     matchTarget.delete(startDateMatch.group(0)[0])
+
+  # get recurrence last
+  var recurrenceMatch = RegexMatch()
+  let hasRecurrence = regex.find(matchTarget, recurrenceRegex, recurrenceMatch)
+  var recurrence = none(Recurrence)
+  if hasRecurrence:
+    recurrence = some(recurrenceFromText(recurrenceMatch.groupFirstCapture(1, matchTarget)))
+    matchTarget.delete(recurrenceMatch.group(0)[0])
   
   nt_logger.log(lvlInfo, "description!: \t" & matchTarget)
 
@@ -108,7 +116,7 @@ proc toTodo(token: markdown.Token): Todo =
     priority: priority,
     status: status,
     description: matchTarget,
-    recurrence: none(Recurrence),
+    recurrence: recurrence,
     startDate: startDate,
     dueDate: dueDate,
     doneDate: doneDate,

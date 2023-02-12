@@ -1,9 +1,17 @@
 from std/times import DateTime
-from std/tables import Table
+from std/tables import Table, toTable
+import std/tables # for the [key] lookup proc
 from std/options import none, Option
 from strformat import fmt
+from regex import re, group, RegexMatch, find
+from unicode import toLower
+import logger
+from std/logging import log, lvlInfo
 
 type
+  DateEntry {.pure.} = enum
+    Day, Week, Month, Year
+
   Status* {.pure.} = enum
     Done, InProgress, Cancelled, Empty, Todo
 
@@ -12,11 +20,8 @@ type
 
   Recurrence* = object
     # rrule: RRule
-    baseOnToday: bool
-    referenceDate: DateTime
-    startDate: DateTime
-    scheduledDate: DateTime
-    dueDate: DateTime
+    text: string
+    every: DateEntry
 
   Todo* = object
     priority*: Priority
@@ -36,3 +41,29 @@ type
     schedule*: seq[Todo]
     todosByFilename*: Table[string, seq[Todo]]
     files*: seq[string]
+
+  RecurrenceError* = object of ValueError
+
+let dateEntry = {
+  "day": DateEntry.Day,
+  "week": DateEntry.Week,
+  "month": DateEntry.Month,
+  "year": DateEntry.Year,
+}.toTable
+
+proc recurrenceFromText*(recurrenceContent: string): Recurrence =
+  # pass in all the text relating to the recurrence, excluding the recurrence
+  # character/emoji
+  
+  let text = unicode.toLower(recurrenceContent)
+
+  let primaryRegex = re"(?u)(\s*?every\s*?(day|week|month|year))"
+  var primaryMatch = RegexMatch()
+  let hasPrimaryRule = text.find(primaryRegex, primaryMatch)
+
+  if not hasPrimaryRule:
+    raise newException(RecurrenceError, "Recurrence \"" & text & "\" does not contain the word \"every\" followed by day, week, month, or year.")
+
+  let every = dateEntry[primaryMatch.group(1, text)[0]]
+
+  return Recurrence(text:text, every:every)
