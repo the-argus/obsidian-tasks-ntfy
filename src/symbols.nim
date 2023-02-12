@@ -1,4 +1,5 @@
 import std/tables
+import std/times
 import regex
 import types
 

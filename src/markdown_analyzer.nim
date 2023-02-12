@@ -15,8 +15,7 @@ import files
 import logger
 import std/logging
 import symbols
-
-let defaultReminderHour = 9
+import constants
 
 proc toDateTime(rm: RegexMatch, text: string): times.DateTime =
   # all the regexes use groupFirstCapture(0) as the regex match
@@ -40,7 +39,6 @@ proc toDateTime(rm: RegexMatch, text: string): times.DateTime =
 
 proc toTodo(token: markdown.Token): Todo =
   var matchTarget = token.doc
-  nt_logger.log(lvlInfo, "converting token \t" & token.doc)
 
   # get the priority and remove it
   var priorityMatch: RegexMatch = RegexMatch()
@@ -50,8 +48,6 @@ proc toTodo(token: markdown.Token): Todo =
     priority = prioritySymbols[$priorityMatch.groupFirstCapture(0, matchTarget)]
     # for some reason the first capture group is 0? idk where the whole match is
     matchTarget.delete(priorityMatch.group(0)[0])
-  
-  nt_logger.log(lvlInfo, "removing status... ")
 
   # get the status and remove it
   var statusMatch: RegexMatch = RegexMatch()
@@ -60,9 +56,6 @@ proc toTodo(token: markdown.Token): Todo =
   if hasStatus:
     status = statusSymbols[$statusMatch.groupFirstCapture(1, matchTarget)]
     matchTarget.delete(statusMatch.group(0)[0])
-  
-  nt_logger.log(lvlInfo, "remaining contents: \t" & matchTarget)
-  nt_logger.log(lvlInfo, "removing doneDate... ")
 
   # make times
   var doneDateMatch: RegexMatch = RegexMatch()
@@ -72,9 +65,6 @@ proc toTodo(token: markdown.Token): Todo =
     doneDate = some(doneDateMatch.toDateTime(matchTarget))
     matchTarget.delete(doneDateMatch.group(0)[0])
   
-  nt_logger.log(lvlInfo, "remaining contents: \t" & matchTarget)
-  nt_logger.log(lvlInfo, "removing dueDate... ")
-  
   var dueDateMatch: RegexMatch = RegexMatch()
   let hasDueDate = regex.find(matchTarget, dueDateRegex, dueDateMatch)
   var dueDate: Option[DateTime] = none(DateTime)
@@ -82,19 +72,13 @@ proc toTodo(token: markdown.Token): Todo =
     dueDate = some(dueDateMatch.toDateTime(matchTarget))
     matchTarget.delete(dueDateMatch.group(0)[0])
   
-  nt_logger.log(lvlInfo, "remaining contents: \t" & matchTarget)
-  nt_logger.log(lvlInfo, "removing scheduledDate... ")
-  
   var scheduledDateMatch: RegexMatch = RegexMatch()
   let hasScheduledDate = regex.find(matchTarget, scheduledDateRegex, scheduledDateMatch)
   var scheduledDate: Option[DateTime] = none(DateTime)
   if hasScheduledDate:
     scheduledDate = some(scheduledDateMatch.toDateTime(matchTarget))
     matchTarget.delete(scheduledDateMatch.group(0)[0])
-  
-  nt_logger.log(lvlInfo, "remaining contents: \t" & matchTarget)
-  nt_logger.log(lvlInfo, "removing startDate... ")
-  
+   
   var startDateMatch: RegexMatch = RegexMatch()
   let hasStartDate = regex.find(matchTarget, startDateRegex, startDateMatch)
   var startDate: Option[DateTime] = none(DateTime)
@@ -110,8 +94,6 @@ proc toTodo(token: markdown.Token): Todo =
     recurrence = some(recurrenceFromText(recurrenceMatch.groupFirstCapture(1, matchTarget)))
     matchTarget.delete(recurrenceMatch.group(0)[0])
   
-  nt_logger.log(lvlInfo, "description!: \t" & matchTarget)
-
   let todo = Todo(
     priority: priority,
     status: status,
@@ -234,29 +216,15 @@ proc makeTodoTable*(root: string, modifiedDates: ref Table[string, int64], previ
     todosChanged = true
     # store the last modified date for next loop comparison
     modifiedDates[file] = last_edit
-    # nt_logger.log(lvlInfo, "analyzing " & file & " for TODOs.")
     newTodos[file] = collectTodos(file)
 
   if todosChanged:
-    # variable to collect *every* todo in (sort later)
-    var unsortedTodos: seq[Todo] = newSeq[Todo](0)
-
     # update the todos for edited files
     for filename, todos in pairs(newTodos):
       finalTable.todosByFilename[filename] = todos
-      for todo in todos:
-        unsortedTodos.add(todo)
 
     # do cleanup
     finalTable.todosByFilename = cleanupDeletedFiles(finalTable)
     cleanupDeletedFiles(modifiedDates, finalTable)
-
-    # sort the schedule
-    unsortedTodos.sort(timeSorter)
-    finalTable.schedule = unsortedTodos # its sorted now though
-
-  for i, todo in enumerate(finalTable.schedule):
-    nt_logger.log(lvlInfo, "Todo " & $i & ": " & todo.description)
-
 
   return finalTable

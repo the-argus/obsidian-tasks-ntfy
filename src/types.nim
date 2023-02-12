@@ -1,12 +1,14 @@
-from std/times import DateTime
+from std/times import DateTime, now
+import std/times # for < operator between dates
 from std/tables import Table, toTable
 import std/tables # for the [key] lookup proc
-from std/options import none, Option
+from std/options import none, Option, isSome, get
 from strformat import fmt
 from regex import re, group, RegexMatch, find
 from unicode import toLower
 import logger
 from std/logging import log, lvlInfo
+import constants
 
 type
   DateEntry {.pure.} = enum
@@ -37,12 +39,16 @@ type
     # scheduledDateIsInferred: bool
 
   TodoTable* = object
-    # Todos sorted by how soon their deadlines are
-    schedule*: seq[Todo]
     todosByFilename*: Table[string, seq[Todo]]
     files*: seq[string]
 
+  Notification* = object
+    message*: string
+    date*: DateTime
+
   RecurrenceError* = object of ValueError
+
+  NoNotificationError* = object of ValueError
 
 let dateEntry = {
   "day": DateEntry.Day,
@@ -50,6 +56,9 @@ let dateEntry = {
   "month": DateEntry.Month,
   "year": DateEntry.Year,
 }.toTable
+
+proc `==`*(a, b: Notification): bool =
+  return (a.message == b.message) and (a.date == b.date)
 
 proc recurrenceFromText*(recurrenceContent: string): Recurrence =
   # pass in all the text relating to the recurrence, excluding the recurrence
@@ -71,3 +80,39 @@ proc recurrenceFromText*(recurrenceContent: string): Recurrence =
   # text.delete(primaryMatch.group(0)[0])
 
   return Recurrence(text:recurrenceContent, every:every)
+
+proc sooner(a, b: Option[DateTime]): Option[DateTime] =
+  if a.isSome and b.isSome:
+    if a.get() < b.get():
+      return a
+    else:
+      return b
+  
+  if a.isSome:
+    return a
+  if b.isSome:
+    return b
+  return a
+
+proc soonestDate*(todo: Todo): DateTime =
+  # TODO: factor in recurrence
+  var soonest: Option[DateTime] = todo.startDate
+
+  soonest = sooner(soonest, todo.dueDate)
+  soonest = sooner(soonest, todo.doneDate)
+  soonest = sooner(soonest, todo.scheduledDate)
+
+  if soonest.isSome:
+    return soonest.get()
+  else:
+    # no date has been supplied for this todo at all
+    var target = now()
+    let day = initDuration(days=1)
+    if target.hour >= defaultReminderHour:
+      target += day
+    return dateTime(
+      year=target.year,
+      month=target.month,
+      day=target.monthday,
+      hour=HourRange(defaultReminderHour)
+    )

@@ -42,21 +42,43 @@ proc main() =
   var todos: TodoTable = TodoTable()
   todos = makeTodoTable(root, modifiedDates, todos)
 
+  var nextNotification = Notification()
+  var hasTodos = todos.retrieveNextNotification(nextNotification)
+
+  if not hasTodos:
+    nt_logger.log(lvlError, "No todos found in notes at " & root)
+    quit(QuitFailure)
+
   while true:
-    sendNotificationsIfNeeded(todos, url)
+    # TODO: fix what happens if there are multiple notifications at the same time
+    # AND if there are two notifications within 10 seconds of each other
+    # (program might skip the second one if its too latent)
+    if now() >= nextNotification.date:
+      # send the next notification to the ntfy url
+      notify(nextNotification.description, url)
+      todos.retrieveNextNotification(nextNotification)
 
     for file in todos.files:
       # check if the files have changed using last modified date
       if modifiedDates.contains(file):
-        if (modifiedDates[file] != getFileInfo(file).lastWriteTime.toUnix()):
+        if (modifiedDates[file] == getFileInfo(file).lastWriteTime.toUnix()):
+          continue
+        else:
           nt_logger.log(lvlInfo, "file change detected...")
-          todos = makeTodoTable(root, modifiedDates, todos)
       else:
         # new file whose modified dates have not yet been saved, remake the db
         nt_logger.log(lvlInfo, "new file found: " & file)
-        todos = makeTodoTable(root, modifiedDates, todos)
 
-    # refresh rate
+      # reset the notifications schedule
+      todos = makeTodoTable(root, modifiedDates, todos)
+      hasTodos = todos.retrieveNextNotification(nextNotification)
+    
+    if not hasTodos:
+      # slow down operational speed if no todos in notes
+      os.sleep(10000)
+      continue
+
+    # "refresh rate"
     os.sleep(500)
   
   quit(QuitSuccess)

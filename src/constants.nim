@@ -1,0 +1,1 @@
+let defaultReminderHour* = 9
