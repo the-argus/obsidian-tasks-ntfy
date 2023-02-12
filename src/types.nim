@@ -36,5 +36,3 @@ type
     schedule*: seq[Todo]
     todosByFilename*: Table[string, seq[Todo]]
     files*: seq[string]
-
-  TodoAccessError* = object of ValueError
