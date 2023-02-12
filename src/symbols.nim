@@ -8,13 +8,15 @@ let startDateSymbol* = "🛫"
 let scheduledDateSymbol* = "⏳"
 let dueDateSymbol* = "📅"
 let doneDateSymbol* = "✅"
-let priorityRegex* = re"(?u)([⏫🔼🔽])$"
-let startDateRegex* = re"(?u)🛫 *(\d{4}-\d{2}-\d{2})$"
-let scheduledDateRegex* = re"(?u)[⏳⌛] *(\d{4}-\d{2}-\d{2})$"
-let dueDateRegex* = re"(?u)[📅📆🗓] *(\d{4}-\d{2}-\d{2})$"
-let doneDateRegex* = re"(?u)✅ *(\d{4}-\d{2}-\d{2})$"
-let recurrenceRegex* = re"(?iu)🔁 ?([a-zA-Z0-9, !]+)$"
-let statusRegex* = re"(?u)\[([ xX\-/])\].*?$"
+# regexs are different: no $ at the end to allow for additional whitespace and
+# to let the dates be in an arbitrary order
+let priorityRegex* = re"(?u)([⏫🔼🔽])"
+let startDateRegex* = re"(?u)(🛫 *(\d{4}-\d{2}-\d{2}))"
+let scheduledDateRegex* = re"(?u)([⏳⌛] *(\d{4}-\d{2}-\d{2}))"
+let dueDateRegex* = re"(?u)([📅📆🗓] *(\d{4}-\d{2}-\d{2}))"
+let doneDateRegex* = re"(?u)(✅ *(\d{4}-\d{2}-\d{2}))"
+let recurrenceRegex* = re"(?iu)(🔁 ?([a-zA-Z0-9, !]+))"
+let statusRegex* = re"(?u)(\[([ xX\-/])\]\sTODO\s)"
 let dateRegex* = re"(\d{4})-(\d{2})-(\d{2})"
 # let hashTags* = (?u:re"(^|\s)#[^ !@#$%^&*(),.?\"\:{}|<>]*")
 

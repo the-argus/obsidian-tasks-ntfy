@@ -2,6 +2,7 @@ import std/os
 import std/tables
 import std/lists
 import std/algorithm
+from std/enumerate import enumerate
 from std/times import dateTime, DateTime, toUnix, MonthdayRange, Month, local
 import std/times # for DateTime < operator
 import std/strutils
@@ -17,14 +18,15 @@ import symbols
 
 let defaultReminderHour = 9
 
-proc toDateTime(rm: RegexMatch): times.DateTime =
-  # all the regexes use group(1) as the regex match
-  let date = $rm.group(1)
+proc toDateTime(rm: RegexMatch, text: string): times.DateTime =
+  # all the regexes use groupFirstCapture(0) as the regex match
+  let date = $rm.groupFirstCapture(0, text)
   var dateMatch: RegexMatch = RegexMatch()
+  # the date is guaranteed to be in here
   discard regex.find(date, dateRegex, dateMatch)
-  let year = ($dateMatch.group(1)).parseInt()
-  let month = ($dateMatch.group(2)).parseInt()
-  let day: MonthdayRange = ($dateMatch.group(3)).parseInt()
+  let year = dateMatch.groupFirstCapture(0, date).parseInt()
+  let month = dateMatch.groupFirstCapture(1, date).parseInt()
+  let day: MonthdayRange = dateMatch.groupFirstCapture(2, date).parseInt()
 
   let newDateTime: times.DateTime = dateTime(
     year=year,
@@ -38,56 +40,74 @@ proc toDateTime(rm: RegexMatch): times.DateTime =
 
 proc toTodo(token: markdown.Token): Todo =
   var matchTarget = token.doc
+  nt_logger.log(lvlInfo, "converting token \t" & token.doc)
 
   # get the priority and remove it
   var priorityMatch: RegexMatch = RegexMatch()
   let hasPriority: bool = regex.find(matchTarget, priorityRegex, priorityMatch)
   var priority = Priority.None
   if hasPriority:
-    priority = prioritySymbols[$priorityMatch.group(0)]
-
-  matchTarget = matchTarget.replace($priorityMatch.group(0), "")
+    priority = prioritySymbols[$priorityMatch.groupFirstCapture(0, matchTarget)]
+    # for some reason the first capture group is 0? idk where the whole match is
+    matchTarget.delete(priorityMatch.group(0)[0])
+  
+  nt_logger.log(lvlInfo, "removing status... ")
 
   # get the status and remove it
   var statusMatch: RegexMatch = RegexMatch()
-  discard regex.find(matchTarget, statusRegex, statusMatch)
-  let status: Status = statusSymbols[$statusMatch.group(1)]
-
-  matchTarget = matchTarget.replace($statusMatch.group(0), "")
+  let hasStatus = regex.find(matchTarget, statusRegex, statusMatch)
+  var status = Status.Todo
+  if hasStatus:
+    status = statusSymbols[$statusMatch.groupFirstCapture(1, matchTarget)]
+    matchTarget.delete(statusMatch.group(0)[0])
+  
+  nt_logger.log(lvlInfo, "remaining contents: \t" & matchTarget)
+  nt_logger.log(lvlInfo, "removing doneDate... ")
 
   # make times
   var doneDateMatch: RegexMatch = RegexMatch()
   let hasDoneDate = regex.find(matchTarget, doneDateRegex, doneDateMatch)
   var doneDate: Option[DateTime] = none(DateTime)
   if hasDoneDate:
-    matchTarget = matchTarget.replace($doneDateMatch.group(0), "")
-    doneDate = some(doneDateMatch.toDateTime())
+    doneDate = some(doneDateMatch.toDateTime(matchTarget))
+    matchTarget.delete(doneDateMatch.group(0)[0])
+  
+  nt_logger.log(lvlInfo, "remaining contents: \t" & matchTarget)
+  nt_logger.log(lvlInfo, "removing dueDate... ")
   
   var dueDateMatch: RegexMatch = RegexMatch()
   let hasDueDate = regex.find(matchTarget, dueDateRegex, dueDateMatch)
   var dueDate: Option[DateTime] = none(DateTime)
   if hasDueDate:
-    matchTarget = matchTarget.replace($dueDateMatch.group(0), "")
-    dueDate = some(dueDateMatch.toDateTime())
+    dueDate = some(dueDateMatch.toDateTime(matchTarget))
+    matchTarget.delete(dueDateMatch.group(0)[0])
+  
+  nt_logger.log(lvlInfo, "remaining contents: \t" & matchTarget)
+  nt_logger.log(lvlInfo, "removing scheduledDate... ")
   
   var scheduledDateMatch: RegexMatch = RegexMatch()
   let hasScheduledDate = regex.find(matchTarget, scheduledDateRegex, scheduledDateMatch)
   var scheduledDate: Option[DateTime] = none(DateTime)
   if hasScheduledDate:
-    matchTarget = matchTarget.replace($scheduledDateMatch.group(0), "")
-    scheduledDate = some(scheduledDateMatch.toDateTime())
+    scheduledDate = some(scheduledDateMatch.toDateTime(matchTarget))
+    matchTarget.delete(scheduledDateMatch.group(0)[0])
+  
+  nt_logger.log(lvlInfo, "remaining contents: \t" & matchTarget)
+  nt_logger.log(lvlInfo, "removing startDate... ")
   
   var startDateMatch: RegexMatch = RegexMatch()
   let hasStartDate = regex.find(matchTarget, startDateRegex, startDateMatch)
   var startDate: Option[DateTime] = none(DateTime)
   if hasStartDate:
-    matchTarget = matchTarget.replace($startDateMatch.group(0), "")
-    startDate = some(startDateMatch.toDateTime())
+    startDate = some(startDateMatch.toDateTime(matchTarget))
+    matchTarget.delete(startDateMatch.group(0)[0])
+  
+  nt_logger.log(lvlInfo, "description!: \t" & matchTarget)
 
   let todo = Todo(
     priority: priority,
     status: status,
-    description: "",
+    description: matchTarget,
     recurrence: none(Recurrence),
     startDate: startDate,
     dueDate: dueDate,
@@ -146,8 +166,8 @@ proc collectTodos(file: string): seq[Todo] =
   for ul in allUls[]:
     recursiveMarkdownSearch(ul, isTodo, allTodos)
 
-  for todo in allTodos[]:
-    nt_logger.log(lvlInfo, todo.doc)
+  for token in allTodos[]:
+    todos.add(token.toTodo())
 
   return todos
 
@@ -206,7 +226,7 @@ proc makeTodoTable*(root: string, modifiedDates: ref Table[string, int64], previ
     todosChanged = true
     # store the last modified date for next loop comparison
     modifiedDates[file] = last_edit
-    nt_logger.log(lvlInfo, "analyzing " & file & " for TODOs.")
+    # nt_logger.log(lvlInfo, "analyzing " & file & " for TODOs.")
     newTodos[file] = collectTodos(file)
 
   if todosChanged:
@@ -226,6 +246,9 @@ proc makeTodoTable*(root: string, modifiedDates: ref Table[string, int64], previ
     # sort the schedule
     unsortedTodos.sort(timeSorter)
     finalTable.schedule = unsortedTodos # its sorted now though
+
+  for i, todo in enumerate(finalTable.schedule):
+    nt_logger.log(lvlInfo, "Todo " & $i & ": " & todo.description)
 
 
   return finalTable
