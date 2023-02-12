@@ -100,7 +100,7 @@ proc toTodo(token: markdown.Token): Todo =
 
 proc isTodo(token: markdown.Token): bool =
   if token of markdown.Li:
-    let pattern = re"(?u)\[[ x]\]\s*?TODO\s*?(.*?)$"
+    let pattern = re"(?u)\[[ xX\-/]\]\s*?TODO\s*?(.*?)"
     return pattern in token.doc
   return false
 
@@ -111,7 +111,6 @@ proc isUl(token: markdown.Token): bool =
 
 proc recursiveMarkdownSearch(token: markdown.Token, eval: (Token) -> bool, allTokens: ref seq[Token]) =
   for child in token.children.items():
-    # skip small children that can"t even contain "- [ ] TODO"
     if child of markdown.Inline:
       continue
     if child.eval():
