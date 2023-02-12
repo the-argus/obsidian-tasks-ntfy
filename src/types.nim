@@ -55,7 +55,7 @@ proc recurrenceFromText*(recurrenceContent: string): Recurrence =
   # pass in all the text relating to the recurrence, excluding the recurrence
   # character/emoji
   
-  let text = unicode.toLower(recurrenceContent)
+  var text = unicode.toLower(recurrenceContent)
 
   let primaryRegex = re"(?u)(\s*?every\s*?(day|week|month|year))"
   var primaryMatch = RegexMatch()
@@ -65,5 +65,9 @@ proc recurrenceFromText*(recurrenceContent: string): Recurrence =
     raise newException(RecurrenceError, "Recurrence \"" & text & "\" does not contain the word \"every\" followed by day, week, month, or year.")
 
   let every = dateEntry[primaryMatch.group(1, text)[0]]
+  
+  # remove what was matched so far
+  # for parsing the "in January" or "on the 1st" element of recurrence
+  # text.delete(primaryMatch.group(0)[0])
 
-  return Recurrence(text:text, every:every)
+  return Recurrence(text:recurrenceContent, every:every)
