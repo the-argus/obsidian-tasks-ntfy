@@ -12,12 +12,17 @@ nimPackages.buildNimPackage {
   nimbleFile = ./notify_tasks.nimble;
   inherit nimRelease;
   nimFlags = ["--threads:on"];
-  
+
   buildInputs = with nimPackages; [
     (nimPackages.fetchNimble {
       pname = "markdown";
       version = "0.8.5";
       hash = "sha256-UUcI/7q0FgbEqygd+O6vKZQJuKO80cn9H4nDAhXU3do=";
+    })
+    (nimPackages.fetchNimble {
+      pname = "schedules";
+      version = "0.2.0";
+      hash = "sha256-3BAyUmGsCev17tecE/piwROQXRmk9ete7MR2hck36pI=";
     })
     regex
     unicodedb
