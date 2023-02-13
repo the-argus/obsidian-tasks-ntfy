@@ -12,4 +12,4 @@ bin           = @["notify_tasks"]
 requires "nim >= 1.0.0"
 requires "markdown >= 0.8.5"
 requires "regex >= 0.20.0"
-requires "schedules >= 0.20.0"
+requires "schedules >= 0.2.0"
