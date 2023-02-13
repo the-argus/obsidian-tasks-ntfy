@@ -20,9 +20,9 @@ nimPackages.buildNimPackage {
       hash = "sha256-UUcI/7q0FgbEqygd+O6vKZQJuKO80cn9H4nDAhXU3do=";
     })
     (nimPackages.fetchNimble {
-      pname = "schedules";
-      version = "0.2.0";
-      hash = "sha256-3BAyUmGsCev17tecE/piwROQXRmk9ete7MR2hck36pI=";
+      pname = "taskman";
+      version = "0.5.4";
+      hash = "sha256-0D1MkC45uu2voRys6JQMupjUhCifZ7bMxLbfqYc3zxI=";
     })
     regex
     unicodedb
