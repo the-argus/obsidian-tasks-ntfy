@@ -1,14 +1,12 @@
-import std/os
-import std/strutils
-import std/sequtils
-import std/tables
-import std/times
-import std/uri
+from std/os import dirExists, getFileInfo, sleep, paramCount, paramStr
+from std/tables import Table, contains
+import std/tables # for table[key] lookup operator
+from std/times import toUnix
+from std/uri import parseUri, initUri, UriParseError
+import notifications
 import types
 import markdown_analyzer
-import scheduling
 import logger
-import std/logging
 
 proc main() =
   # process and validate arguments ---------------------------------------------
@@ -29,10 +27,10 @@ proc main() =
   try:
     parsedUrl = parseUri(input_url)
   except UriParseError as e:
-    nt_logger.log(lvlError, e.msg)
+    logError(e.msg)
     quit(QuitFailure)
   if parsedUrl.scheme != "https" and parsedUrl.scheme != "http":
-    nt_logger.log(lvlError, "Url " & input_url & " is not of type http or https.")
+    logError("Url " & input_url & " is not of type http or https.")
     quit(QuitFailure)
 
   let url = $parsedUrl
@@ -42,44 +40,23 @@ proc main() =
   var todos: TodoTable = TodoTable()
   todos = makeTodoTable(root, modifiedDates, todos)
 
-  var nextNotification = Notification()
-  var hasTodos = todos.retrieveNextNotification(nextNotification)
-
-  if not hasTodos:
-    nt_logger.log(lvlError, "No todos found in notes at " & root)
-    quit(QuitFailure)
-
   while true:
-    # TODO: fix what happens if there are multiple notifications at the same time
-    # AND if there are two notifications within 10 seconds of each other
-    # (program might skip the second one if its too latent)
-    if now() >= nextNotification.date:
-      # send the next notification to the ntfy url
-      notify(nextNotification.description, url)
-      todos.retrieveNextNotification(nextNotification)
-
     for file in todos.files:
       # check if the files have changed using last modified date
       if modifiedDates.contains(file):
         if (modifiedDates[file] == getFileInfo(file).lastWriteTime.toUnix()):
           continue
         else:
-          nt_logger.log(lvlInfo, "file change detected...")
+          log("file change detected...")
       else:
         # new file whose modified dates have not yet been saved, remake the db
-        nt_logger.log(lvlInfo, "new file found: " & file)
+        log("new file found: " & file)
 
       # reset the notifications schedule
       todos = makeTodoTable(root, modifiedDates, todos)
-      hasTodos = todos.retrieveNextNotification(nextNotification)
-    
-    if not hasTodos:
-      # slow down operational speed if no todos in notes
-      os.sleep(10000)
-      continue
 
     # "refresh rate"
-    os.sleep(500)
+    sleep(500)
   
   quit(QuitSuccess)
 

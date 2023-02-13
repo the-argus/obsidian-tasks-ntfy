@@ -13,8 +13,6 @@ import regex
 import types
 import files
 import logger
-import std/logging
-import symbols
 import constants
 
 proc toDateTime(rm: RegexMatch, text: string): times.DateTime =

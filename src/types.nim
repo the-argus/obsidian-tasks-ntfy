@@ -11,15 +11,6 @@ from std/logging import log, lvlInfo
 import constants
 
 type
-  DateEntry {.pure.} = enum
-    Day, Week, Month, Year
-
-  Status* {.pure.} = enum
-    Done, InProgress, Cancelled, Empty, Todo
-
-  Priority* {.pure.} = enum
-    High, Medium, None, Low
-
   Recurrence* = object
     # rrule: RRule
     text: string
@@ -42,23 +33,7 @@ type
     todosByFilename*: Table[string, seq[Todo]]
     files*: seq[string]
 
-  Notification* = object
-    message*: string
-    date*: DateTime
-
   RecurrenceError* = object of ValueError
-
-  NoNotificationError* = object of ValueError
-
-let dateEntry = {
-  "day": DateEntry.Day,
-  "week": DateEntry.Week,
-  "month": DateEntry.Month,
-  "year": DateEntry.Year,
-}.toTable
-
-proc `==`*(a, b: Notification): bool =
-  return (a.message == b.message) and (a.date == b.date)
 
 proc recurrenceFromText*(recurrenceContent: string): Recurrence =
   # pass in all the text relating to the recurrence, excluding the recurrence
@@ -113,6 +88,6 @@ proc soonestDate*(todo: Todo): DateTime =
     return dateTime(
       year=target.year,
       month=target.month,
-      day=target.monthday,
+      monthday=target.monthday,
       hour=HourRange(defaultReminderHour)
     )
