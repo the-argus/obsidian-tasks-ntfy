@@ -3,6 +3,7 @@ from std/tables import Table, contains
 import std/tables # for table[key] lookup operator
 from std/times import toUnix
 from std/uri import parseUri, initUri, UriParseError
+from schedule import createSchedulerFromTodos
 import notifications
 import types
 import markdown_analyzer
@@ -39,6 +40,7 @@ proc main() =
   var modifiedDates: ref Table[string, int64] = new(Table[string, int64])
   var todos: TodoTable = TodoTable()
   todos = makeTodoTable(root, modifiedDates, todos)
+  let notifier = createSchedulerFromTodos(todos)
 
   while true:
     for file in todos.files:
