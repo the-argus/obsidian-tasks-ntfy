@@ -4,6 +4,7 @@ import std/tables # for table[key] lookup operator
 from std/times import toUnix
 from std/uri import parseUri, initUri, UriParseError
 from schedule import createSchedulerFromTodos
+from asyncDispatch import asyncCheck
 import notifications
 import types
 import markdown_analyzer
@@ -41,6 +42,7 @@ proc main() =
   var todos: TodoTable = TodoTable()
   todos = makeTodoTable(root, modifiedDates, todos)
   let notifier = createSchedulerFromTodos(todos)
+  asyncCheck(notifier.start())
 
   while true:
     for file in todos.files:
@@ -56,6 +58,8 @@ proc main() =
 
       # reset the notifications schedule
       todos = makeTodoTable(root, modifiedDates, todos)
+      notifier = createSchedulerFromTodos(todos)
+      asyncCheck(notifier.start())
 
     # "refresh rate"
     sleep(500)
