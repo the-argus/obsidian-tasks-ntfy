@@ -1,5 +1,6 @@
 from std/osproc import execProcess, poUsePath
 from std/times import DateTime
+import sugar
 
 type
   Notification* = object
@@ -12,7 +13,7 @@ type
 proc `==`*(a, b: Notification): bool =
   return (a.message == b.message) and (a.date == b.date)
 
-proc notification(message: string, date: DateTime, url: string): Notification =
+proc initNotification*(message: string, date: DateTime, url: string): Notification =
   Notification(message:message, date:date, url:url)
 
 proc notify(description: string, ntfyUrl: string) =
@@ -27,5 +28,5 @@ proc notify(description: string, ntfyUrl: string) =
     options={poUsePath}
   )
 
-proc notify*(notification: Notification) =
-  notify(notification.message, notification.url)
+proc notifyFunc*(notification: Notification): proc =
+  return () => notify(notification.message, notification.url)
