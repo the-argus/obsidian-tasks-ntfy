@@ -29,4 +29,4 @@ proc notify(description: string, ntfyUrl: string) =
   )
 
 proc notifyFunc*(notification: Notification): proc =
-  return () => notify(notification.message, notification.url)
+  return proc () {.async.} = notify(notification.message, notification.url)
