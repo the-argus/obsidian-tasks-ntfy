@@ -4,7 +4,7 @@ import std/tables # for table[key] lookup operator
 from std/times import toUnix
 from std/uri import parseUri, initUri, UriParseError
 from schedule import createTasksFromTodos
-from taskman import start, newAsyncScheduler
+import taskman
 import std/asyncfutures
 import notifications
 import types
@@ -46,6 +46,8 @@ proc main() =
   todos = makeTodoTable(root, modifiedDates, todos)
   var notifier = newAsyncScheduler()
   createTasksFromTodos(notifier, todos, url)
+  notifier.every(5.seconds) do () {.async.}:
+    echo "5 seconds has passed, see you again in 5 seconds"
   asyncCheck notifier.start(refreshRate)
 
   while true:
@@ -61,6 +63,7 @@ proc main() =
         log("new file found: " & file)
 
       # reset the notifications schedule
+      log("rebuilding tasks which removes the \"every 5.seconds\" task.")
       todos = makeTodoTable(root, modifiedDates, todos)
       createTasksFromTodos(notifier, todos, url)
       asyncCheck notifier.start(refreshRate)
