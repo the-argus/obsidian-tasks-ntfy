@@ -17,6 +17,7 @@ proc initNotification*(message: string, date: DateTime, url: string): Notificati
   Notification(message:message, date:date, url:url)
 
 proc notify(description: string, ntfyUrl: string) =
+  echo description
   discard execProcess("curl",
     args=[
       "-d",

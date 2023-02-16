@@ -42,7 +42,7 @@ proc main() =
   var modifiedDates: ref Table[string, int64] = new(Table[string, int64])
   var todos: TodoTable = TodoTable()
   todos = makeTodoTable(root, modifiedDates, todos)
-  var notifier = createSchedulerFromTodos(todos)
+  var notifier = createSchedulerFromTodos(todos, url)
   asyncCheck start(notifier)
 
   while true:
@@ -59,7 +59,7 @@ proc main() =
 
       # reset the notifications schedule
       todos = makeTodoTable(root, modifiedDates, todos)
-      notifier = createSchedulerFromTodos(todos)
+      notifier = createSchedulerFromTodos(todos, url)
       asyncCheck start(notifier)
 
     # "refresh rate"
