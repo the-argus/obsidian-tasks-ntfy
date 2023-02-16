@@ -46,8 +46,6 @@ proc main() =
   todos = makeTodoTable(root, modifiedDates, todos)
   var notifier = newAsyncScheduler()
   createTasksFromTodos(notifier, todos, url)
-  notifier.every(5.seconds) do () {.async.}:
-    echo "5 seconds has passed, see you again in 5 seconds"
   asyncCheck notifier.start(refreshRate)
 
   while true:
@@ -63,12 +61,11 @@ proc main() =
         log("new file found: " & file)
 
       # reset the notifications schedule
-      log("rebuilding tasks which removes the \"every 5.seconds\" task.")
       todos = makeTodoTable(root, modifiedDates, todos)
       createTasksFromTodos(notifier, todos, url)
-      asyncCheck notifier.start(refreshRate)
 
     # "refresh rate"
+    poll()
     sleep(refreshRate)
   
   quit(QuitSuccess)
