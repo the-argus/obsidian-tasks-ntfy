@@ -36,7 +36,7 @@ proc main() =
     logError("Url " & input_url & " is not of type http or https.")
     quit(QuitFailure)
 
-  let url = $parsedUrl
+  let url = input_url
 
   let refreshRate = 500 # milliseconds
 
