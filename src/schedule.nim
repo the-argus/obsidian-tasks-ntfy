@@ -25,9 +25,6 @@ proc createNotifications(todo: Todo, url: string): seq[Notification] =
   if todo.dueDate.isSome:
     let n = initNotification(todo.description, todo.dueDate.get(), url)
     notifications.add(n)
-  if todo.doneDate.isSome:
-    let n = initNotification(todo.description, todo.doneDate.get(), url)
-    notifications.add(n)
 
   return notifications
 

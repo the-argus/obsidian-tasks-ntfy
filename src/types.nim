@@ -23,7 +23,6 @@ type
     startDate*: Option[DateTime]
     scheduledDate*: Option[DateTime]
     dueDate*: Option[DateTime]
-    doneDate*: Option[DateTime]
     recurrence*: Option[Recurrence]
     # tags*: seq[string]
     # originalMarkdown: string
@@ -74,7 +73,6 @@ proc soonestDate*(todo: Todo): DateTime =
   var soonest: Option[DateTime] = todo.startDate
 
   soonest = sooner(soonest, todo.dueDate)
-  soonest = sooner(soonest, todo.doneDate)
   soonest = sooner(soonest, todo.scheduledDate)
 
   if soonest.isSome:

@@ -35,7 +35,7 @@ proc toDateTime(rm: RegexMatch, text: string): times.DateTime =
 
   return newDateTime
 
-proc toTodo(token: markdown.Token): Todo =
+proc toTodo(token: markdown.Token): Option[Todo] =
   var matchTarget = token.doc
 
   # get the priority and remove it
@@ -53,15 +53,15 @@ proc toTodo(token: markdown.Token): Todo =
   var status = Status.Todo
   if hasStatus:
     status = statusSymbols[$statusMatch.groupFirstCapture(1, matchTarget)]
+    if (status == Status.Done or status == Status.Cancelled):
+      return none(Todo)
     matchTarget.delete(statusMatch.group(0)[0])
 
   # make times
   var doneDateMatch: RegexMatch = RegexMatch()
   let hasDoneDate = regex.find(matchTarget, doneDateRegex, doneDateMatch)
-  var doneDate: Option[DateTime] = none(DateTime)
   if hasDoneDate:
-    doneDate = some(doneDateMatch.toDateTime(matchTarget))
-    matchTarget.delete(doneDateMatch.group(0)[0])
+    return none(Todo)
   
   var dueDateMatch: RegexMatch = RegexMatch()
   let hasDueDate = regex.find(matchTarget, dueDateRegex, dueDateMatch)
@@ -99,11 +99,10 @@ proc toTodo(token: markdown.Token): Todo =
     recurrence: recurrence,
     startDate: startDate,
     dueDate: dueDate,
-    doneDate: doneDate,
     scheduledDate: scheduledDate
   )
 
-  return todo
+  return some(todo)
 
 
 proc isTodo(token: markdown.Token): bool =
@@ -155,7 +154,9 @@ proc collectTodos(file: string): seq[Todo] =
     recursiveMarkdownSearch(ul, isTodo, allTodos)
 
   for token in allTodos[]:
-    todos.add(token.toTodo())
+    let todo = token.toTodo()
+    if todo.isSome:
+      todos.add(todo.get())
 
   return todos
 

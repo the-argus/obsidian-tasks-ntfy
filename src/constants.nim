@@ -39,6 +39,7 @@ let prioritySymbols* = {
   "": Priority.None
 }.toTable
 
+# IF YOU CHANGE THIS YOU MUST ALSO CHANGE THE REGEX
 let statusSymbols* = {
   "x": Status.Done,
   "X": Status.Done,
