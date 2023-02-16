@@ -28,4 +28,20 @@ on your devices, so you actually recieve the notifications. See [Subscribe to a 
 
 ## tasks spec
 
-waiting on [this issue I made](https://github.com/obsidian-tasks-group/obsidian-tasks/issues/1656)
+Tasks are formatted like so:
+
+```markdown
+- [ ] TODO description of thing todo 🛫 [start date] ⏳ [scheduled date] 📅 [due date] 🔁 every [recurrence]
+```
+
+Where the start date, scheduled date, and due date are all dates formatted like
+``YYYY-MM-DD``. Each are optional, and you will get a notification for each one.
+
+🔁 recurrence is one of (day|week|month|year), and also optional.
+
+The contents of the ``[ ]`` square brackets must be one of the following characters:
+
+- ``x`` or ``X``: done (no notifications)
+- ``-``: cancelled (no notifications)
+- ``/``: in progress
+- `` ``: Todo
