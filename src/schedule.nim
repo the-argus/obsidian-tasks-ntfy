@@ -1,5 +1,6 @@
 from std/options import isSome, get
 from std/times import getTime
+from std/heapqueue import clear
 import std/tables # for the lookup operator
 import sugar # for () => syntax
 import taskman
@@ -38,12 +39,10 @@ proc add(notifier: var AsyncScheduler, notifications: seq[Notification]) =
     # register this notification task with the notifier
     notifier &= task
 
-proc createSchedulerFromTodos*(todoTable: TodoTable, url: string): taskman.AsyncScheduler =
-  var notifier = taskman.newAsyncScheduler()
+proc createTasksFromTodos*(notifier: var taskman.AsyncScheduler, todoTable: TodoTable, url: string) =
+  notifier.tasks.clear()
   # create tasks for every todo
   for filename, todos in pairs(todoTable.todosByFilename):
     for todo in todos:
       let notifications = todo.createNotifications(url)
       notifier.add(notifications)
-
-  return notifier

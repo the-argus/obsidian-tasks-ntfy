@@ -3,8 +3,8 @@ from std/tables import Table, contains
 import std/tables # for table[key] lookup operator
 from std/times import toUnix
 from std/uri import parseUri, initUri, UriParseError
-from schedule import createSchedulerFromTodos
-from taskman import start
+from schedule import createTasksFromTodos
+from taskman import start, newAsyncScheduler
 import std/asyncfutures
 import notifications
 import types
@@ -38,12 +38,15 @@ proc main() =
 
   let url = $parsedUrl
 
+  let refreshRate = 500 # milliseconds
+
   # main functionality ---------------------------------------------------------
   var modifiedDates: ref Table[string, int64] = new(Table[string, int64])
   var todos: TodoTable = TodoTable()
   todos = makeTodoTable(root, modifiedDates, todos)
-  var notifier = createSchedulerFromTodos(todos, url)
-  asyncCheck start(notifier)
+  var notifier = newAsyncScheduler()
+  createTasksFromTodos(notifier, todos, url)
+  asyncCheck notifier.start(refreshRate)
 
   while true:
     for file in todos.files:
@@ -59,11 +62,11 @@ proc main() =
 
       # reset the notifications schedule
       todos = makeTodoTable(root, modifiedDates, todos)
-      notifier = createSchedulerFromTodos(todos, url)
-      asyncCheck start(notifier)
+      createTasksFromTodos(notifier, todos, url)
+      asyncCheck notifier.start(refreshRate)
 
     # "refresh rate"
-    sleep(500)
+    sleep(refreshRate)
   
   quit(QuitSuccess)
 
