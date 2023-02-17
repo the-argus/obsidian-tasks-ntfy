@@ -1,4 +1,4 @@
-from std/options import isSome, get
+from std/options import isSome, none
 from std/times import getTime
 import std/times
 from std/heapqueue import clear
@@ -16,16 +16,26 @@ proc createCron(notification: Notification): taskman.Cron =
 
 proc createNotifications(todo: Todo, url: string): seq[Notification] =
   var notifications: seq[Notification] = @[]
+  var startDate = false
+  var scheduledDate = false
+  var dueDate = false
+  
+  if (not startDate) and (not scheduledDate) and (not dueDate):
+    notifications.add(initNotification(todo.description, none(DateTime), url))
+    return notifications
   
   if todo.startDate.isSome:
-    let n = initNotification(todo.description, todo.startDate.get(), url)
+    let n = initNotification(todo.description, todo.startDate, url)
     notifications.add(n)
+    startDate = true
   if todo.scheduledDate.isSome:
-    let n = initNotification(todo.description, todo.scheduledDate.get(), url)
+    let n = initNotification(todo.description, todo.scheduledDate, url)
     notifications.add(n)
+    scheduledDate = true
   if todo.dueDate.isSome:
-    let n = initNotification(todo.description, todo.dueDate.get(), url)
+    let n = initNotification(todo.description, todo.dueDate, url)
     notifications.add(n)
+    dueDate = true
 
   return notifications
 

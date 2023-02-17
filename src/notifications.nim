@@ -1,11 +1,12 @@
 from std/osproc import execProcess, poUsePath
 from std/times import DateTime
+from std/options import Option, isSome, get
 import sugar
 
 type
   Notification* = object
     message: string
-    date: DateTime
+    date: Option[DateTime]
     url: string
 
   NoNotificationError* = object of ValueError
@@ -14,9 +15,11 @@ proc `==`*(a, b: Notification): bool =
   return (a.message == b.message) and (a.date == b.date)
 
 proc `$`*(n: Notification): string =
-  return n.message & " at " & $n.date
+  result = n.message
+  if n.date.isSome:
+    result &= " at " & $n.date
 
-proc initNotification*(message: string, date: DateTime, url: string): Notification =
+proc initNotification*(message: string, date: Option[DateTime], url: string): Notification =
   Notification(message:message, date:date, url:url)
 
 proc notify(description: string, ntfyUrl: string) =
