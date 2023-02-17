@@ -1,12 +1,13 @@
 from std/options import isSome, get
 from std/times import getTime
+import std/times
 from std/heapqueue import clear
 import std/tables # for the lookup operator
 import sugar # for () => syntax
 import taskman
 import taskman/cron
 from types import TodoTable, Todo
-from notifications import notifyFunc, Notification, initNotification
+import notifications
 import logger
 
 proc createCron(notification: Notification): taskman.Cron =

@@ -13,6 +13,9 @@ type
 proc `==`*(a, b: Notification): bool =
   return (a.message == b.message) and (a.date == b.date)
 
+proc `$`*(n: Notification): string =
+  return n.message & " at " & $n.date
+
 proc initNotification*(message: string, date: DateTime, url: string): Notification =
   Notification(message:message, date:date, url:url)
 
