@@ -1,4 +1,4 @@
-from std/options import isSome, none
+import std/options
 from std/times import getTime
 import std/times
 from std/heapqueue import clear
@@ -8,11 +8,31 @@ import taskman
 import taskman/cron
 from types import TodoTable, Todo
 import notifications
+import constants
 import logger
 
 proc createCron(notification: Notification): taskman.Cron =
-  #TODO
-  return initCron()
+  # start by getting all possible cron inputs
+  let date = notification.date.get()
+  var minute = {0.MinuteRange}
+  var hour = {defaultReminderHour.HourRange}
+  var monthday = {date.monthday.MonthdayRange}
+  var weekday = getDayOfWeek(date.monthday.MonthdayRange, Month(date.month), date.year)
+  var month = {Month(date.month)}
+
+  # this function should only be called if notification.recurrence isSome
+  let recurrence = notification.recurrence.get()
+  if recurrence == DateEntry.Day:
+    return initCron(minutes=minute, hours=hour)
+  elif recurrence == DateEntry.Week:
+    return initCron(minutes=minute, hours=hour, weekDays={weekday})
+  elif recurrence == DateEntry.Month:
+    return initCron(minutes=minute, hours=hour, monthDays=monthday)
+  elif recurrence == DateEntry.Year:
+    return initCron(minutes=minute, hours=hour, monthDays=monthday, months=month)
+
+  # this should never happen >:(
+  raise newException(ValueError, "createCron called on a notification with no known recurrence.")
 
 proc createNotifications(todo: Todo, url: string): seq[Notification] =
   var notifications: seq[Notification] = @[]
@@ -42,8 +62,20 @@ proc createNotifications(todo: Todo, url: string): seq[Notification] =
 proc add(notifier: var AsyncScheduler, notifications: seq[Notification]) =
   # todos can have multiple notifications
   for notification in notifications:
-    let cronTiming = createCron(notification)
-    let task = taskman.newTask[taskman.AsyncTaskHandler](cronTiming, notification.notifyFunc())
+    # default is to notify every day at defaultReminderHour
+    var task : AsyncTask = taskman.newTask[taskman.AsyncTaskHandler](initCron({0.MinuteRange}, {defaultReminderHour.HourRange}), notification.notifyFunc())
+    if not notification.date.isSome:
+      notifier &= task
+      continue
+
+    # handle recurrence with a cron timer
+    if notification.recurrence.isSome:
+      let cronTiming = createCron(notification)
+      task = taskman.newTask[taskman.AsyncTaskHandler](cronTiming, notification.notifyFunc())
+    else:
+      # use datetime task if there is no recurrence
+      task = taskman.newTask[taskman.AsyncTaskHandler](notification.date.get(), notification.notifyFunc())
+
     # register this notification task with the notifier
     notifier &= task
 
