@@ -1,6 +1,7 @@
 from std/osproc import execProcess, poUsePath
-from std/times import DateTime
+import std/times
 from std/options import Option, isSome, get, none
+from std/strformat import fmt
 import sugar
 import constants
 import types
@@ -20,7 +21,8 @@ proc `==`*(a, b: Notification): bool =
 proc `$`*(n: Notification): string =
   result = n.message
   if n.date.isSome:
-    result &= " at " & $n.date
+    let date = n.date.get()
+    result &= " at " & (fmt"{date.year}-{date.month}-{date.monthday}")
 
 proc initNotification*(message: string, date: Option[DateTime], url: string, recurrence = none(DateEntry)): Notification =
   Notification(message:message, date:date, url:url, recurrence:recurrence)

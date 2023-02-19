@@ -22,6 +22,8 @@ proc createCron(notification: Notification): taskman.Cron =
 
   # this function should only be called if notification.recurrence isSome
   let recurrence = notification.recurrence.get()
+
+  # remove certain cron inputs if it should repeat for those elements
   if recurrence == DateEntry.Day:
     return initCron(minutes=minute, hours=hour)
   elif recurrence == DateEntry.Week:
@@ -36,23 +38,23 @@ proc createCron(notification: Notification): taskman.Cron =
 
 proc createNotifications(todo: Todo, url: string): seq[Notification] =
   var notifications: seq[Notification] = @[]
-  var startDate = false
-  var scheduledDate = false
-  var dueDate = false
+  var startDate = todo.startDate.isSome
+  var scheduledDate = todo.scheduledDate.isSome
+  var dueDate = todo.dueDate.isSome
   
   if (not startDate) and (not scheduledDate) and (not dueDate):
     notifications.add(initNotification(todo.description, none(DateTime), url))
     return notifications
   
-  if todo.startDate.isSome:
+  if startDate:
     let n = initNotification(todo.description, todo.startDate, url)
     notifications.add(n)
     startDate = true
-  if todo.scheduledDate.isSome:
+  if scheduledDate:
     let n = initNotification(todo.description, todo.scheduledDate, url)
     notifications.add(n)
     scheduledDate = true
-  if todo.dueDate.isSome:
+  if dueDate:
     let n = initNotification(todo.description, todo.dueDate, url)
     notifications.add(n)
     dueDate = true
@@ -62,6 +64,7 @@ proc createNotifications(todo: Todo, url: string): seq[Notification] =
 proc add(notifier: var AsyncScheduler, notifications: seq[Notification]) =
   # todos can have multiple notifications
   for notification in notifications:
+    echo $notification
     # default is to notify every day at defaultReminderHour
     var task : AsyncTask = taskman.newTask[taskman.AsyncTaskHandler](initCron({0.MinuteRange}, {defaultReminderHour.HourRange}), notification.notifyFunc())
     if not notification.date.isSome:
