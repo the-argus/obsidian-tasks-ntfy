@@ -17,20 +17,12 @@
     pkgs =
       genSystems (system:
         import nixpkgs {inherit system;});
-    musl = genSystems (system:
-      import nixpkgs {
-        localSystem = {
-          inherit system;
-          libc = "musl";
-          config = "x86_64-unknown-linux-musl";
-        };
-      });
   in {
     packages = genSystems (system: {
       notify-tasks = pkgs.${system}.callPackage ./. {};
       default = self.packages.${system}.notify-tasks;
 
-      musl = musl.${system}.callPackage ./. {};
+      musl = pkgs.${system}.callPackage ./. {useMusl = true;};
     });
   };
 }
