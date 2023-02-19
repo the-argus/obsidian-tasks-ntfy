@@ -46,7 +46,7 @@ in
     ];
 
     buildInputs = with nimPackages; [
-      muslPkgs.pcre.dev
+      pcre.dev
       (nimPackages.fetchNimble {
         pname = "markdown";
         version = "0.8.5";
