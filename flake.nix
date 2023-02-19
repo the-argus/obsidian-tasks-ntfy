@@ -14,8 +14,9 @@
       "aarch64-linux"
     ];
     genSystems = nixpkgs.lib.genAttrs supportedSystems;
-    pkgs = genSystems (system:
-      import nixpkgs {inherit system;});
+    pkgs =
+      genSystems (system:
+        import nixpkgs {inherit system;});
   in {
     packages = genSystems (system: {
       notify-tasks = pkgs.${system}.callPackage ./. {};
