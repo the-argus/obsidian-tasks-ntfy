@@ -4,6 +4,10 @@
   useMusl ? false,
   lib,
   musl,
+  muslPkgs ? null,
+  upx,
+  binutils,
+  pcre,
   ...
 }: let
   nimFlags =
@@ -12,11 +16,21 @@
       "--gcc.exe:musl-gcc"
       "--gcc.linkerexe:musl-gcc"
       "--passL:-static"
+      # this doesn't matter but I think I could make the project be aware
+      # of whether or not its building with musl in the future
       "-d:musl"
+      "--define:usePcreHeader"
+      "--passL:${pcre.out}/lib/libpcre.a"
     ]);
+      # "--passC:-I${pcre}/include"
   pname = "notify_tasks";
+
+  builder =
+    if useMusl
+    then nimPackages.buildNimPackage.override {inherit (muslPkgs) stdenv;}
+    else nimPackages.buildNimPackage;
 in
-  nimPackages.buildNimPackage {
+  builder {
     inherit pname;
     version = "0.0.1";
     src = ./.;
@@ -25,9 +39,14 @@ in
     nimbleFile = ./notify_tasks.nimble;
     inherit nimRelease nimFlags;
 
-    nativeBuildInputs = lib.lists.optionals useMusl [musl];
+    nativeBuildInputs = lib.lists.optionals useMusl [
+      musl
+      upx
+      binutils
+    ];
 
     buildInputs = with nimPackages; [
+      muslPkgs.pcre.dev
       (nimPackages.fetchNimble {
         pname = "markdown";
         version = "0.8.5";
@@ -41,4 +60,9 @@ in
       regex
       unicodedb
     ];
+
+    postFixup = lib.strings.optionalString useMusl ''
+      strip -s $out/bin/${pname}
+      upx --best $out/bin/${pname}
+    '';
   }
